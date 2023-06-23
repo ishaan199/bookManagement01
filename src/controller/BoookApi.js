@@ -3,6 +3,7 @@ const UserModel = require('../model/UserModel')
 const validation = require('../validation/validation');
 const mongoose = require('mongoose');
 const moment = require("moment");
+const ReviewModel = require('../model/ReviewModel')
 const createBook = async (req,res) => {
     try{
         let data = req.body;
@@ -10,10 +11,10 @@ const createBook = async (req,res) => {
         const allBookData = await BookModel.find();
 
         //checking user id is valid or not
-        // let checkId = ObjectId.isValid(userId);
-        // if(!checkId){
-        //     return res.status(400).send({status:false,msg:"Please provide valid user id in the body"})
-        // }
+        let checkId = validation.isValidObjectId(userId);
+        if(!checkId){
+            return res.status(400).send({status:false,msg:"Please provide valid user id in the body"})
+        }
         // console.log(req.userId.toString())
         // console.log(userId)
         if(!(userId === req.userId)){
@@ -21,38 +22,38 @@ const createBook = async (req,res) => {
         }
 
         //Checking the request body is empty or not
-        if(!validation.isValidRequestBody(req.body)){
+        if(Object.keys(req.body).length < 1){
             return res.status(400).send({status:false,mssg:"Please Provide the data to process"});
         };
         //title Validation
         //checking id the title field is empyt or not and trim();
-        if(!validation.isValid(title)){
+        if(!validation.isEmpty(title)){
             return res.status(400).send({status:false,msg:"Please enter the title"})
         };
-        if(validation.isValid(title)){
+        if(title){
             let titledup = allBookData.map(ele => ele.title === title);
             if(titledup[0]){
                 return res.status(400).send({status:false,msg:'This title is already present'})
             };
         };
         //Check the Field is empty or not
-        if(!validation.isValid(excerpt)){
+        if(!validation.isEmpty(excerpt)){
             return res.status(400).send({status:false,msg:"Please enter the excerpt"});
         };
         //checking the empty field or not and duplication
-        if(!validation.isValid(ISBN)){
+        if(!validation.isEmpty(ISBN)){
             return res.status(400).send({status:false,msg:'Please enter the ISBN'});
         };
-        if(validation.isValid(ISBN)){
+        if(ISBN){
             let isbnDup = allBookData.map(ele => ele.ISBN === ISBN);
             if(isbnDup[0]){
                 return res.status(400).send({status:false,msg:"This ISBN is already present"})
             };
         };
-        if(!validation.isValid(category)){
+        if(!validation.isEmpty(category)){
             return res.status(400).send({status:false,msg:"Please Enter the category"});
         };
-        if(!validation.isValid(subcategory)){
+        if(!validation.isEmpty(subcategory)){
             return res.status(400).send({status:false,msg:"Please Enter the subcategory"});
         };
 
@@ -65,7 +66,7 @@ const createBook = async (req,res) => {
                 let releasedAt = new Date();
                 let bookCreated = { title, excerpt, userId, ISBN, category, subcategory, releasedAt, reviews };
                 let saveData = await BookModel.create(bookCreated);
-                return res.status(201).send({status:true,msg:"success",data:saveData});
+                return res.status(201).send({status:true,data:saveData});
         };
     }catch(error){
         res.status(500).send({status:false,msg:"error",error:error.message})
@@ -96,17 +97,11 @@ const getFilterbooks = async (req,res) => {
 const getBookId = async (req,res) => {
     try{
             const bookId = req.params.bookId;
-            
-
-            // if(bookId){
-            //     if(!mongoose.Schema.Types.ObjectId.isValid(bookId)){
-            //          return res.status(400).send({ status: false, message: 'Invalid bookId Format' });
-            //     };
-            // };
+           
             if(!bookId){
                 return res.status(400).send({ status: false, message: "Please enter bookId" })
             };
-            if(!validation.isValid(bookId)){
+            if(!validation.isValidObjectId(bookId)){
                 return res.status(400).send({ status: false, message: "Invalid bookId" })
             };
             const bookData = await BookModel.findOne({ _id: bookId });
@@ -116,12 +111,12 @@ const getBookId = async (req,res) => {
         if (bookData.isDeleted == true) {
             return res.status(404).send({ status: false, msg: " this Book is Deleted" })
         }
-        // const reviewsData = await reviewModel.find({ bookId: bookId });
+        const reviewsData = await ReviewModel.find({ bookId: bookId });
 
-        // const data = {...bookData, reviewsData: reviewsData }
-        // bookData._doc["reviewsData"] = reviewsData;
+        const data = {...bookData, reviewsData: reviewsData }
+        bookData._doc["reviewsData"] = reviewsData;
 
-        return res.status(200).send({ status: "true", message: bookData });
+        return res.status(200).send({ status: "true", data: bookData });
     }catch(error){
         return res.status(400).send({status:false,msg:"error",error:error.message});
     }

@@ -11,15 +11,15 @@ const userRegister = async (req,res) => {
 
 
         //Checking the request body for the field
-        if(!validation.isValidRequestBody(req.body)){
+        if(Object.keys(req.body).length < 1){
             return res.status(400).send({status:false,msg:"Please provide some data to process"})
         }
 
         //Title
-        if(!validation.isValid(title)){
+        if(!validation.isEmpty(title)){
             return res.status(400).send({status:false,msg:"Please fill the field using ['Mr','Mrs','Ms']"})
         }
-        if(validation.isValid(title)){
+        if(validation.isEmpty(title)){
             const enums = ["Mr", "Mrs", "Ms", "mr", "mrs", "ms"];
             let result = enums.includes(title);
             if(!result){
@@ -28,13 +28,13 @@ const userRegister = async (req,res) => {
         };
 
         //Name
-        if(!validation.isValid(name)){
+        if(!validation.isEmpty(name)){
             return res.status(400).send({status:false,msg:"Please fill the field"});
         };
-        if(!validation.alphabetTestOfString(name)){
+        if(!validation.isValidName(name)){
             return res.status(400).send({status:false,msg:"Provide proper name"});
         };
-        if(validation.alphabetTestOfString(name)){
+        if(validation.isValidName(name)){
             let regex = /[a-zA-Z]/;
             if(!regex.test(name)){
                 return res.status(400).send({status:false,msg:"Enter only letters"});
@@ -42,14 +42,14 @@ const userRegister = async (req,res) => {
         };
 
         //Phone
-        if(!validation.isValid(phone)){
+        if(!validation.isEmpty(phone)){
             return res.status(400).send({status:false,msg:"enter the phone number"});
         };
-        if(!validation.isValidMobileNum(phone)){
+        if(!validation.isEmpty(phone)){
             return res.status(400).send({status:false,msg:"Enter a valid Phone numbers"});
         };
         if(phone){
-        if(validation.isValidMobileNum(phone)){
+        if(validation.isValidPhone(phone)){
             const checkPhone = allData.map(ele => ele.phone === phone);
             
             if(checkPhone[0]){
@@ -59,10 +59,10 @@ const userRegister = async (req,res) => {
     };
 
         //Email
-        if(!validation.isValid(email)){
+        if(!validation.isEmpty(email)){
             return res.status(400).send({status:false,msg:"Please Enter the Email"})
         };
-        if(!validation.isValidSyntaxOfEmail(email)){
+        if(!validation.isValidEmail(email)){
             return res.status(400).send({status:false,msg:"Please provide a valid email id"})
         };
         if(email){
@@ -73,7 +73,7 @@ const userRegister = async (req,res) => {
         };
 
         //Password
-        if(!validation.isValid(password)){
+        if(!validation.isEmpty(password)){
             return res.status(400).send({status:false,msg:"Please enter the password"});
         }
         if(password){
@@ -84,7 +84,7 @@ const userRegister = async (req,res) => {
         };
 
         let saveData = await UserModel.create(data);
-        res.status(201).send({status:true,msg:"success",data:saveData});
+        res.status(201).send({status:true,data:saveData});
     }catch(error){
         res.status(500).send({status:false,error:error.message});
     };
@@ -96,14 +96,14 @@ const userLogin = async (req,res) => {
         const data = req.body;
         const {email, password} = data;
 
-        if(!validation.isValid(email)){
+        if(!validation.isEmpty(email)){
             return res.status(400).send({status:false,msg:"Enter the email."});
         };
-        if(!validation.isValidSyntaxOfEmail(email)){
+        if(!validation.isValidEmail(email)){
             return res.status(400).send({status:false,msg:"Please provide some valid email"});
         };
 
-        if(!validation.isValid(password)){
+        if(!validation.isEmpty(password)){
             return res.status(400).send({status:false,msg:"Enter the password"});
         };
         const credData = await UserModel.findOne({email:email,password:password});
@@ -114,7 +114,7 @@ const userLogin = async (req,res) => {
             userId : credData._id.toString(),
         },"project-4", {expiresIn:"180m"});
 
-        res.status(201).send({status:true,token:token});
+        res.status(201).send({status:true,data:{token}});
         
     }catch(error){
         return res.status(500).send({status:false,error:error.message})
